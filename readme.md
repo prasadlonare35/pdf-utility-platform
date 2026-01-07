@@ -35,13 +35,13 @@ It is designed as a **cost-effective replacement** for tools like Adobe Acrobat 
 
 ## Architecture
 
-Desktop Application (Electron + React)
-↓
-Local Backend API (FastAPI)
-↓
-PDF Processing Engine
-↓
-Local File System
+      Desktop Application (Electron + React)
+               ↓
+      Local Backend API (FastAPI)
+               ↓
+      PDF Processing Engine
+               ↓
+      Local File System
 
 
 All processing happens **locally on the user's machine**.  
@@ -70,29 +70,29 @@ Temporary files are cleaned automatically after each operation.
 
 ## Project Structure
 
-project-root/
-│
-├── backend/
-│ ├── main.py
-│ ├── api_router.py
-│ ├── modules/
-│ │ ├── pdf_ops.py
-│ │ └── ocr_ops.py
-│ └── requirements.txt
-│
-├── desktop_app/
-│ ├── src/
-│ │ ├── pages/
-│ │ ├── components/
-│ │ └── App.jsx
-│ ├── main.js
-│ └── preload.js
-│
-├── scripts/
-│ ├── install_deps.bat
-│ └── start_dev.bat
-│
-└── README.md
+      project-root/
+      │
+      ├── backend/
+      │ ├── main.py
+      │ ├── api_router.py
+      │ ├── modules/
+      │ │ ├── pdf_ops.py
+      │ │ └── ocr_ops.py
+      │ └── requirements.txt
+      │
+      ├── desktop_app/
+      │ ├── src/
+      │ │ ├── pages/
+      │ │ ├── components/
+      │ │ └── App.jsx
+      │ ├── main.js
+      │ └── preload.js
+      │
+      ├── scripts/
+      │ ├── install_deps.bat
+      │ └── start_dev.bat
+      │
+      └── README.md
 
 
 ---
