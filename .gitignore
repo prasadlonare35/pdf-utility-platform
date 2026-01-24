@@ -3,26 +3,17 @@
 # ======================
 venv/
 backend/venv/
+__pycache__/
 backend/__pycache__/
-backend/**/*.pyc
-backend/**/*.pyo
-backend/**/*.pyd
 *.pyc
 *.pyo
 *.pyd
-
-# Temp and cache
-__pycache__/
-*.log
-*.tmp
-*.temp
-*.swp
-
-# FastAPI temp outputs
+.pytest_cache/
+.coverage
+htmlcov/
 backend/temp/
 backend/*.db
 backend/*.sqlite3
-
 
 # ======================
 # NODE / REACT / ELECTRON
@@ -32,32 +23,39 @@ desktop_app/node_modules/
 desktop_app/dist/
 desktop_app/out/
 desktop_app/.vite/
+desktop_app/build/
+desktop_app/.env
+desktop_app/.env.local
+desktop_app/npm-debug.log*
+desktop_app/yarn-debug.log*
+desktop_app/yarn-error.log*
 dist/
 out/
+build/
 *.asar
 
-
 # ======================
-# BUILD OUTPUT (Packaging)
+# BUILD OUTPUT (PyInstaller / Electron Builder)
 # ======================
 *.exe
 *.msi
 *.dll
 *.zip
+*.7z
 *.tar
 *.gz
-
-# Electron Forge / Builder artifacts
-release/
-build/
-
+backend/build/
+backend/dist/
+*.spec
+win-unpacked/
 
 # ======================
 # OS FILES
 # ======================
 .DS_Store
 Thumbs.db
-
+ehthumbs.db
+Desktop.ini
 
 # ======================
 # IDE / EDITOR CONFIG
@@ -65,12 +63,14 @@ Thumbs.db
 .vscode/
 .idea/
 *.iml
-
+*.swp
+*.swo
 
 # ======================
-# MISC
+# LOGS
 # ======================
-*.env
-*.bak
-*.old
-*~
+*.log
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+backend/*.log

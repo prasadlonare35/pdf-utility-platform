@@ -39,6 +39,9 @@ async def health_check():
 from api_router import router as pdf_router
 app.include_router(pdf_router, prefix="/api/pdf", tags=["PDF Operations"])
 
+from routers.convert_router import router as convert_router
+app.include_router(convert_router)
+
 def start():
     """Launched with `poetry run start` at root level"""
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

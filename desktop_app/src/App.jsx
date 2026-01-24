@@ -9,6 +9,7 @@ import DeletePagesPage from './pages/DeletePagesPage';
 import OCRPage from './pages/OCRPage';
 import PdfToImagesPage from './pages/PdfToImagesPage';
 import ImagesToPdfPage from './pages/ImagesToPdfPage';
+import ConvertPage from './pages/ConvertPage';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -45,6 +46,8 @@ function App() {
         return <PdfToImagesPage />;
       case 'img-to-pdf':
         return <ImagesToPdfPage />;
+      case 'convert':
+        return <ConvertPage />;
       case 'dashboard':
         return (
           <div>

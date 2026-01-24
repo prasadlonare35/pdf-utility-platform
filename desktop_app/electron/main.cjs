@@ -1,115 +1,142 @@
-const { app, BrowserWindow } = require('electron');
-const path = require('path');
-const { spawn } = require('child_process');
+const path = require("path");
+const { app, BrowserWindow, ipcMain } = require("electron");
+const { spawn } = require("child_process");
+const fs = require("fs");
+const os = require("os");
 
-// Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require('electron-squirrel-startup')) {
-  app.quit();
+// --- LOGGING SETUP ---
+const logFile = path.join(app.getPath("userData"), "app_debug.log");
+function log(msg) {
+  const time = new Date().toISOString();
+  const entry = `[${time}] ${msg}\n`;
+  console.log(entry.trim());
+  fs.appendFileSync(logFile, entry);
 }
 
-let mainWindow;
-let backendProcess;
+log("-----------------------------------------");
+log("App Starting...");
+log(`UserData Path: ${app.getPath("userData")}`);
+log(`Resources Path: ${process.resourcesPath}`);
 
-function createWindow() {
-  mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      nodeIntegration: false,
-      contextIsolation: true,
-    },
-  });
+let backendProcess = null;
+let mainWindow = null;
 
+function getBackendPath() {
   const isDev = !app.isPackaged;
-  // In dev, Vite runs on 5173. 
-  const startUrl = process.env.ELECTRON_START_URL || 'http://localhost:5173';
-  
-  // If in production, load the index.html from dist
-  const prodUrl = `file://${path.join(__dirname, '../dist/index.html')}`;
-
-  mainWindow.loadURL(isDev ? startUrl : prodUrl);
-
   if (isDev) {
-    mainWindow.webContents.openDevTools();
+    // Attempt to find venv python
+    const venvPython = path.join(__dirname, "..", "..", "backend", "venv", "Scripts", "python.exe");
+    if (fs.existsSync(venvPython)) {
+      log("Dev Mode: Found venv python");
+      return { cmd: venvPython, args: ["main.py"], cwd: path.join(__dirname, "..", "..", "backend") };
+    }
+    log("Dev Mode: venv python not found, trying system 'python'");
+    return { cmd: "python", args: ["main.py"], cwd: path.join(__dirname, "..", "..", "backend") };
+  } else {
+    // Production
+    // We expect the backend folder to be at resources/backend
+    const backendDir = path.join(process.resourcesPath, "backend");
+    const exePath = path.join(backendDir, "main.exe");
+
+    log(`Checking for backend at: ${exePath}`);
+    if (fs.existsSync(exePath)) {
+      return { cmd: exePath, args: [], cwd: backendDir };
+    }
+
+    // Fallback/Debug check
+    // Sometimes boilerplate puts it elsewhere, log directory listing if missing
+    try {
+      log(`Backend MISSING. Listing contents of ${process.resourcesPath}:`);
+      fs.readdirSync(process.resourcesPath).forEach(f => log(` - ${f}`));
+    } catch (e) { log(`Error listing resources: ${e.message}`); }
+
+    return null;
   }
 }
 
 function startBackend() {
-  // If SKIP_BACKEND_SPAWN is set, we assume it's running externally
-  if (process.env.SKIP_BACKEND_SPAWN === 'true') {
-    console.log('Skipping backend spawn (SKIP_BACKEND_SPAWN is set)');
+  log("Attempting to start backend...");
+
+  if (process.env.SKIP_BACKEND === "true") {
+    log("SKIP_BACKEND set. Skipping spawn.");
     return;
   }
 
-  const isDev = !app.isPackaged;
-  let cmd;
-  let args;
-  let cwd;
-
-  if (isDev) {
-    // DEV MODE: Try to use the venv python
-    console.log('Starting Backend in DEV mode...');
-    const venvPythonPoints = [
-      path.join(__dirname, '../../backend/venv/Scripts/python.exe'), // Windows
-      path.join(__dirname, '../../backend/venv/bin/python'),       // Unix
-    ];
-    
-    // We are on Windows, so index 0
-    cmd = venvPythonPoints[0];
-    
-    // Fallback to system python if venv not found (simplification)
-    // For now we assume venv exists as per install instructions
-    
-    args = ['main.py'];
-    cwd = path.join(__dirname, '../../backend');
-  } else {
-    // PROD MODE: Bundled executable
-    console.log('Starting Backend in PROD mode...');
-    const backendPath = path.join(process.resourcesPath, 'backend_dist', 'main.exe');
-    cmd = backendPath;
-    args = [];
-    cwd = path.dirname(backendPath);
+  const config = getBackendPath();
+  if (!config) {
+    log("CRITICAL: Backend executable not found.");
+    return;
   }
 
-  console.log(`Spawning backend: ${cmd} ${args.join(' ')} in ${cwd}`);
+  log(`Spawning: ${config.cmd} ${config.args.join(" ")} in ${config.cwd}`);
 
   try {
-    backendProcess = spawn(cmd, args, { cwd });
-
-    backendProcess.stdout.on('data', (data) => {
-      console.log(`[Backend]: ${data}`);
+    backendProcess = spawn(config.cmd, config.args, {
+      cwd: config.cwd,
+      detached: false, // Keep attached so we can kill it easily
+      shell: false
+      // stdio: 'pipe' by default
     });
 
-    backendProcess.stderr.on('data', (data) => {
-      console.error(`[Backend Error]: ${data}`);
+    backendProcess.stdout.on("data", (data) => {
+      log(`[BACKEND STDOUT]: ${data.toString().trim()}`);
     });
 
-    backendProcess.on('close', (code) => {
-      console.log(`Backend process exited with code ${code}`);
+    backendProcess.stderr.on("data", (data) => {
+      log(`[BACKEND STDERR]: ${data.toString().trim()}`);
     });
+
+    backendProcess.on("error", (err) => {
+      log(`[BACKEND SPAWN ERROR]: ${err.message}`);
+    });
+
+    backendProcess.on("close", (code) => {
+      log(`[BACKEND EXIT] Code: ${code}`);
+    });
+
   } catch (e) {
-    console.error('Failed to spawn backend:', e);
+    log(`EXCEPTION spawning backend: ${e.message}`);
   }
+}
+
+function createWindow() {
+  mainWindow = new BrowserWindow({
+    width: 1280,
+    height: 900,
+    webPreferences: {
+      preload: path.join(__dirname, "preload.js"),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  const isDev = !app.isPackaged;
+  if (isDev) {
+    mainWindow.loadURL("http://localhost:5173");
+    mainWindow.webContents.openDevTools();
+  } else {
+    const indexPath = path.join(__dirname, "..", "dist", "index.html");
+    log(`Loading frontend from: ${indexPath}`);
+    mainWindow.loadFile(indexPath);
+  }
+
+  mainWindow.on('closed', () => mainWindow = null);
 }
 
 app.whenReady().then(() => {
   startBackend();
   createWindow();
 
-  app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
+  app.on("activate", function () {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 });
 
-app.on('window-all-closed', () => {
+app.on("window-all-closed", () => {
+  log("App closing...");
   if (backendProcess) {
-    console.log('Killing backend process...');
+    log("Killing backend...");
     backendProcess.kill();
   }
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  if (process.platform !== "darwin") app.quit();
 });

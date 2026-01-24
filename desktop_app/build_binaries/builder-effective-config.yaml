@@ -1,0 +1,23 @@
+directories:
+  output: build_binaries
+  buildResources: build
+appId: com.prasad.pdfutility
+productName: PDF Utility Platform
+files:
+  - filter:
+      - dist/**/*
+      - electron/**/*
+      - package.json
+extraResources:
+  - from: ../backend/dist/main
+    to: backend
+win:
+  icon: build/icon.ico
+  target: nsis
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+electronVersion: 39.2.7

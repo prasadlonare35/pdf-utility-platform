@@ -249,3 +249,4 @@ async def images_to_pdf_endpoint(
     except Exception as e:
         shutil.rmtree(temp_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=str(e))
+

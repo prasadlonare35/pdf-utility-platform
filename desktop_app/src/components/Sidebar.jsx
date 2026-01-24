@@ -7,6 +7,7 @@ export default function Sidebar({ currentPage, onNavigate }) {
         { id: 'ocr', label: 'OCR & Search', icon: '🔍' },
         { id: 'pdf-to-img', label: 'PDF to Images', icon: '🖼️' },
         { id: 'img-to-pdf', label: 'Images to PDF', icon: '📑' },
+        { id: 'convert', label: 'Convert Document', icon: '🔁' },
     ];
 
     return (
